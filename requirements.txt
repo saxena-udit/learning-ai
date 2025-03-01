@@ -1,0 +1,11 @@
+langchain_openai
+langchain_community
+
+langchain-google-genai
+
+llmsherpa
+llama-index
+
+pypdf
+
+streamlit
