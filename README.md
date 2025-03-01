@@ -6,8 +6,6 @@ This project is a financial advisor chatbot that leverages the power of Google's
 
 *   **Context-Aware Responses:** The chatbot analyzes uploaded PDF documents to understand the context and provide relevant answers to user questions.
 *   **Financial Data Extraction:** It can extract and present financial information, including stock details, YoY growth, revenue by segment, and more.
-*   **JSON Output:** When relevant, the chatbot structures its responses as JSON objects, making it easy to integrate with other applications.
-*   **Table Generation:** It can generate financial data tables, both from provided context or by creating them from scratch.
 *   **Streamlit Interface:** A user-friendly web interface built with Streamlit allows users to interact with the chatbot.
 *   **Gemini Model:** Utilizes the advanced capabilities of the `gemini-1.5-pro` model for natural language understanding and generation.
 * **Langchain Integration**: The project extensively leverages LangChain's capabilities for building chains, and managing prompts.
@@ -33,7 +31,7 @@ This project is a financial advisor chatbot that leverages the power of Google's
 
 1.  **Clone the repository:**
     ```bash
-    git clone <your-repository-url> # (Replace with actual URL if available)
+    git clone https://github.com/saxena-udit/learning-ai.git
     cd learning-ai/chatbot
     ```
 
