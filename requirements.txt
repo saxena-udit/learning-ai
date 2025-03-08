@@ -1,7 +1,13 @@
-langchain_openai
-langchain_community
-
+langchain-openai
+langchain-community
+langchain-chroma
+langchain-core
 langchain-google-genai
+
+beautifulsoup4
+google
+
+requests
 
 llmsherpa
 llama-index
