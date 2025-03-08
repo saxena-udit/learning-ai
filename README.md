@@ -1,104 +1,102 @@
-# Finance Chatbot - Powered by Gemini and LangChain
+# Langchain-Gemini Financial Chatbot
 
-This project is a financial advisor chatbot that leverages the power of Google's Gemini model (specifically `gemini-1.5-pro`) and the LangChain framework to provide users with insights and information based on uploaded financial documents. It can answer questions, extract financial data, and structure responses in JSON format for easy processing.
+This project implements a chatbot that leverages Langchain, Google's Gemini model, and a vector database to answer questions based on financial documents (PDFs).
 
-## Features
+## Key Features
 
-*   **Context-Aware Responses:** The chatbot analyzes uploaded PDF documents to understand the context and provide relevant answers to user questions.
-*   **Financial Data Extraction:** It can extract and present financial information, including stock details, YoY growth, revenue by segment, and more.
-*   **Streamlit Interface:** A user-friendly web interface built with Streamlit allows users to interact with the chatbot.
-*   **Gemini Model:** Utilizes the advanced capabilities of the `gemini-1.5-pro` model for natural language understanding and generation.
-* **Langchain Integration**: The project extensively leverages LangChain's capabilities for building chains, and managing prompts.
-* **PDF Handling:** The project can load and split PDF files into smaller chunks to facilitate the processing.
+-   **Context-Aware Chat:** The chatbot can use a vector database built from financial reports to provide contextually relevant answers.
+-   **PDF Handling:**
+    -   Ingests PDF documents, splits them into chunks, and stores them in a vector database.
+    -   Retrieves relevant chunks from the database based on user queries.
+    -   Supports loading PDF's from URL's and local.
+-   **Multiple Vector Databases:**  The system now efficiently manages multiple vector databases, each potentially representing a different data source (e.g., different financial periods or companies).
+-   **Gemini Integration:** Uses Google's Gemini model for natural language understanding and generation.
+- **Context Awerenes:** Chatbot will be context aware or not depending on your preferences.
+-   **Streamlit UI:** Provides a user-friendly interface for interacting with the chatbot.
+-   **Dynamic PDF Retrieval:** Scrapes Google Search results to find relevant financial report PDFs based on company tickers and financial quarters.
 
-## Technologies Used
+## Vector Database Enhancements
 
-*   **LangChain:** A framework for building applications with large language models.
-*   **Google Gemini API:**  For the core natural language processing and generation.
-*   **Streamlit:** For creating the interactive web interface.
-*   **PyPDF:** For PDF file loading and processing.
-*   **RecursiveCharacterTextSplitter**: to split large text documents into chunks
-*   **python-dotenv:** For managing environment variables.
-* **llama-index**: for potential future upgrades.
+The latest updates significantly improve how the project handles the vector database.
 
-## Prerequisites
+### Multiple Vector Database Support
 
-*   **Python 3.8+**
-*   **Google Gemini API Key:**  You need a valid Google Gemini API key.
-*   **LangChain API Key:** You will need a LangChain API key for tracing and monitoring.
+-   **Directory-Based Organization:** Instead of a single, monolithic database, the system now stores data in multiple directories within the `vector_db_base_path`. Each subdirectory represents a distinct set of documents (e.g., different financial quarter reports).
+-   **Dynamic Loading:** The system now dynamically loads all vector databases found in the `vector_db_base_path` subdirectories. This allows for easy addition of new data without manual reconfiguration.
+-   **Unified Search:** When a user asks a question, the `search_vector_db` function efficiently searches across *all* loaded vector databases to find the most relevant documents.
+- **Auto creating**: Now, the system will auto generate vector database if none is found.
+- **Auto adding:** Now, the system will add documents to existing database when new document is uploaded.
 
-## Installation
+### How it Works
 
-1.  **Clone the repository:**
+1.  **PDF Loading:**
+    -   When a new PDF is uploaded (via the Streamlit UI) or downloaded from the web (using `load_pdf_from_url`):
+        -   The PDF is split into smaller chunks of text.
+        -   Embeddings are generated for each chunk using the `GoogleGenerativeAIEmbeddings` model.
+        -   The chunks and their embeddings are stored in a new vector database inside a subdirectory. If the vector db exists, the chunks are added to the existing DB.
+2.  **Database Loading:**
+    -   The `load_vector_db` function will auto populate the DB with the PDFs found via Google Search, if no DB is found.
+    - The `vector_db_retriever` function now automatically discovers and loads all the vector databases from the subdirectories.
+3.  **Question Answering:**
+    -   The `search_vector_db` function takes the user's question and performs a similarity search across all loaded databases.
+    -   The results from all databases are combined, providing a broader and more relevant context for the language model.
+    - The `retrieval_chain` function, will take care of adding the context to the prompt template.
+
+### Code Highlights
+
+-   **`loader/financial_data_loader.py`**
+    -   `load_and_split_pdf`: Persists PDF data into a directory specific database.
+    -   `load_pdf_from_url`: Handles downloading and processing PDFs from URLs.
+    -   `load_vector_db`: Iterates through found URLs, downloads the files and call the persist_to_db
+    -   `persist_to_db`: Will persist all the pdf chunks into a DB.
+    -   `vector_db_retriever`: Loads all the vector databases, by iterating into the sub directories.
+    -   `search_vector_db`: Searches across multiple vector databases for relevant documents.
+-   **`chatbot/langchain_gemini.py`**
+    -   `retrieval_chain`:  will add context, if there is any.
+- **`app.py`**:
+    - `Context aware` checkbox will allow user to decide if use vector DB as a context or not.
+
+## Setup and Usage
+
+1.  **Install Dependencies:**
+
     ```bash
-    git clone https://github.com/saxena-udit/learning-ai.git
-    cd learning-ai/chatbot
+    pip install -r requirements.txt
     ```
 
-2.  **Create a virtual environment (recommended):**
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate  # On Linux/macOS
-    venv\Scripts\activate  # On Windows
+2.  **Environment Variables:**
+    Create a `.env_my` file at the root of the project with these variables:
+
     ```
-
-3.  **Install the required packages:**
-    ```bash
-    pip install -r ../requirements.txt
+    GOOGLE_API_KEY=your_google_api_key
+    LANGCHAIN_API_KEY=your_langchain_api_key
     ```
+    Remember to use this file when starting the app.
 
-4.  **Set up environment variables:**
-
-    *   Create a `.env` file in the `learning-ai` directory (one level up from the chatbot directory) and add your API keys:
-
-    ```properties
-    GEMINI_API_KEY=YOUR_GEMINI_API_KEY
-    LANGCHAIN_API_KEY=YOUR_LANGCHAIN_API_KEY
-    LANGCHAIN_PROJECT=Finance Chatbot
+3. **Populate DB:**
+    You can run the `app_loader.py` to populate the DB from the PDFs found in google.
     ```
+    python app_loader.py
+    ```
+4.  **Run the Streamlit App:**
 
-    *   Replace `YOUR_GEMINI_API_KEY` and `YOUR_LANGCHAIN_API_KEY` with your actual API keys.
-
-## How to Use
-
-1.  **Run the Streamlit app:**
     ```bash
     streamlit run app.py
     ```
+5.  **Interact:**
+    Upload a new pdf or, start asking questions.
 
-2.  **Interact with the Chatbot:**
+## Future Improvements
 
-    *   Open your web browser and go to the URL provided by Streamlit (usually `http://localhost:8501`).
-    *   **Upload a PDF:** In the left sidebar, you can upload a financial document (PDF) that you want the chatbot to use as context.
-    *   **Ask a Question:** In the main area, type your question in the text input field.
-    *   **View the Response:** The chatbot will generate a response, either in plain text or as a structured JSON table, depending on the question and context.
-    *   **No PDF:** If you do not provide a PDF, the chatbot will still try to provide you with information.
-
-## Code Structure
-
-*   **`app.py`:** The main Streamlit application file, handles the UI, file uploads, and interaction with the LangChain.
-*   **`langchain_gemini.py`:** Contains the core logic for interacting with the Gemini model, defining prompts, creating the retrieval chain, loading and splitting pdf files.
-* **`requirements.txt`**: List of all dependencies
-
-## Key Code Details
-
-*   **`load_and_split_pdf(uploaded_file)`:** Loads a PDF, splits it into chunks, and returns the chunks.
-*   **`create_prompt_template(has_context)`:** Dynamically creates a prompt template based on whether context is available.
-*   **`retrieval_chain(prompt, retriever, uploaded_file)`:** Creates the LangChain chain for retrieving and responding to user queries.
-* **`ChatGoogleGenerativeAI`**: used as a wrapper for calling Gemini.
-
-## Future Enhancements
-
-*   **Web Data Retrieval:** Enhance the chatbot to gather information from live web sources (e.g., stock market APIs) in addition to uploaded files.
-*   **Improved Error Handling:** Implement more robust error handling and logging for better debugging and user experience.
-* **More Langchain features**: integrate more langchain features like, agents and tools.
-*   **UI/UX improvements:** Add some UI/UX features, like keeping the conversation context.
-*   **More models:** Add the option to choose between more LLMs.
+-   **Database Pruning:** Implement a mechanism to remove old or irrelevant databases.
+- **More sources:** Add more sources for DB population, like CSV, TXT, etc.
+-   **UI/UX:** Improve overall user experience.
+- **Error Handling**: improve overall error handling.
 
 ## Contributing
 
-Contributions are welcome! If you'd like to improve the project, feel free to fork the repository and submit a pull request.
+Contributions are welcome! Please feel free to submit pull requests or open issues.
 
 ## License
 
-[Specify the license for your project here, e.g., MIT License]
+This project is licensed under the [Your License] license.
