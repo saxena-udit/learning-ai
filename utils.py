@@ -58,5 +58,5 @@ def get_financial_quarter(date=None):
 
     return f"{quarter} FY{year}-{year+1}"
 
-
-load_env_vars()
+if "GOOGLE_API_KEY" not in os.environ:
+    load_env_vars()

@@ -1,3 +1,3 @@
-from loader.financial_data_loader import load_vector_db
+from loader.financial_data_loader import FinancialDataLoader
 
-load_vector_db()
+FinancialDataLoader().load_vector_db()
