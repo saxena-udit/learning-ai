@@ -1,7 +1,4 @@
 import streamlit as st
-import pandas as pd
-from chatbot.financial_chatbot import FinancialChatbot
-from loader.financial_data_loader import FinancialDataLoader
 from utils import utils
 from utils.logger import setup_logger
 import uvicorn

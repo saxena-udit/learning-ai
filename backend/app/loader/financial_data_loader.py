@@ -1,7 +1,6 @@
 import io
 import os
 from typing import List
-
 import requests
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyPDFLoader
@@ -289,8 +288,8 @@ class FinancialDataLoader:
             for persist_directory in subdirectories:
                 try:
                     logger.debug(f"Searching vector database in {persist_directory}")
-                    db = Chroma(persist_directory=persist_directory, embedding_function=self.embeddings)
-                    results = db.similarity_search(query)
+                    #db = Chroma(persist_directory=persist_directory, embedding_function=self.embeddings)
+                    results = self.db.similarity_search(query)
                     logger.debug(f"Found {len(results)} results in {persist_directory}")
                     all_results.extend(results)
                 except Exception as e:
@@ -322,3 +321,4 @@ class FinancialDataLoader:
             logger.error(f"Error formatting documents: {str(e)}", exc_info=True)
             return ""
 
+financial_data_loader = FinancialDataLoader()

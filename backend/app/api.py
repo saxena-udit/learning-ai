@@ -8,8 +8,8 @@ import uvicorn
 import time
 from pathlib import Path
 
-from chatbot.financial_chatbot import FinancialChatbot
-from loader.financial_data_loader import FinancialDataLoader
+from chatbot.financial_chatbot import financial_chatbot
+from loader.financial_data_loader import financial_data_loader
 from utils.utils import utils
 from utils.logger import setup_logger
 
@@ -36,8 +36,7 @@ app.add_middleware(
 # Initialize global instances with error handling
 try:
     logger.info("Initializing chatbot and financial data loader...")
-    chatbot = FinancialChatbot()
-    financial_data_loader = FinancialDataLoader()
+    chatbot = financial_chatbot
     logger.info("Initialization complete")
 except Exception as e:
     logger.error(f"Failed to initialize components: {str(e)}", exc_info=True)

@@ -89,3 +89,4 @@ class LLMModelProvider:
         """
         return self.model_name
 
+llm_model_provider = LLMModelProvider()

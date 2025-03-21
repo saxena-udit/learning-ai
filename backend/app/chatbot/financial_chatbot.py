@@ -1,7 +1,7 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
-from loader.financial_data_loader import FinancialDataLoader
-from model.llm_models import LLMModelProvider
+from loader.financial_data_loader import financial_data_loader
+from model.llm_models import llm_model_provider
 from utils.utils import utils
 from utils.logger import get_logger
 
@@ -16,11 +16,10 @@ class FinancialChatbot:
         logger.info(f"Initializing FinancialChatbot with model: {model_name}")
         
         try:
-            llm_provider = LLMModelProvider(model_name)
-            self.llm = llm_provider.get_model()
+            self.llm = llm_model_provider.get_model()
             self.json_output_parser = JsonOutputParser()
             self.output_parser = StrOutputParser()
-            self.financial_data_loader = FinancialDataLoader()
+            self.financial_data_loader = financial_data_loader
             logger.info("FinancialChatbot initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing FinancialChatbot: {str(e)}", exc_info=True)
@@ -88,3 +87,5 @@ class FinancialChatbot:
         except Exception as e:
             logger.error(f"Error creating retrieval chain: {str(e)}", exc_info=True)
             raise 
+
+financial_chatbot = FinancialChatbot()
