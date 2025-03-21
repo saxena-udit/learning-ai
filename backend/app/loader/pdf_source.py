@@ -1,4 +1,4 @@
-from utils import utils
+from utils.utils import utils
 from googlesearch import search
 import logging
 from typing import List, Optional

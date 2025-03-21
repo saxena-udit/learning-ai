@@ -1,11 +1,10 @@
 import datetime
 import os
 from dotenv import load_dotenv
-# In app.py (or in a dedicated config file)
-import logging
+from utils.logger import get_logger
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Get a logger for this module
+logger = get_logger("utils")
 
 class Utils:
     def __init__(self):
@@ -16,17 +15,27 @@ class Utils:
         self.embedding_model_name = os.getenv("EMBEDDING_MODEL_NAME", "models/embedding-001")  # Load from env with default
         self.model_name = os.getenv("MODEL_NAME", "gemini-1.5-pro")  # Default to gemini-1.5-pro if not set
         self.tickers = ["RELIANCE", "TCS"]
-        logging.info(f"Initialized with model name: {self.model_name}")
+        logger.info(f"Initialized with model name: {self.model_name}")
         
     def load_env_vars(self):
+        """Load environment variables needed for the application"""
         os.environ["LANGCHAIN_TRACING_V2"] = "true"
         os.environ["LANGSMITH_PROJECT"] = f"Finance Chatbot-{self.model_name}"
 
-        os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
-        logging.info(f"LANGCHAIN_API_KEY: {os.environ['LANGCHAIN_API_KEY']}, {os.getenv('LANGCHAIN_API_KEY')}")
-        
-        os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
-        logging.info(f"GOOGLE_API_KEY: {os.environ['GOOGLE_API_KEY']}, {os.getenv('GOOGLE_API_KEY')}")
+        try:
+            os.environ["LANGCHAIN_API_KEY"] = os.getenv("LANGCHAIN_API_KEY")
+            if not os.environ["LANGCHAIN_API_KEY"]:
+                logger.warning("LANGCHAIN_API_KEY is empty")
+            else:
+                logger.info("LANGCHAIN_API_KEY loaded successfully")
+            
+            os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+            if not os.environ["GOOGLE_API_KEY"]:
+                logger.warning("GOOGLE_API_KEY is empty")
+            else:
+                logger.info("GOOGLE_API_KEY loaded successfully")
+        except Exception as e:
+            logger.error(f"Error loading environment variables: {str(e)}", exc_info=True)
 
     @staticmethod
     def get_financial_quarter(date=None):

@@ -1,4 +1,6 @@
 .venv/
+**/venv/
+**/logs/
 **/__pycache__
 chroma_db/
 .env_my
