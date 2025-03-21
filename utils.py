@@ -13,7 +13,7 @@ class Utils:
         load_dotenv(verbose=True, override=True, dotenv_path=".env_my")
         
         self.vector_db_base_path = "./chroma_db/"
-        self.embedding_model_name = "models/embedding-001"  # or "models/latest" or "models/text-embedding-004"
+        self.embedding_model_name = os.getenv("EMBEDDING_MODEL_NAME", "models/embedding-001")  # Load from env with default
         self.model_name = os.getenv("MODEL_NAME", "gemini-1.5-pro")  # Default to gemini-1.5-pro if not set
         self.tickers = ["RELIANCE", "TCS"]
         logging.info(f"Initialized with model name: {self.model_name}")
