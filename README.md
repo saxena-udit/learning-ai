@@ -1,6 +1,6 @@
 # Langchain-Gemini Financial Chatbot
 
-This project implements a chatbot that leverages Langchain, Google's Gemini model, and a vector database to answer questions based on financial documents (PDFs).
+This project implements a chatbot that leverages Langchain, Google's Gemini model, and a vector database to answer questions based on financial documents (PDFs). The project includes both a Streamlit web interface and a FastAPI backend for programmatic access.
 
 ## Key Features
 
@@ -11,8 +11,10 @@ This project implements a chatbot that leverages Langchain, Google's Gemini mode
     -   Supports loading PDF's from URL's and local.
 -   **Multiple Vector Databases:**  The system now efficiently manages multiple vector databases, each potentially representing a different data source (e.g., different financial periods or companies).
 -   **Gemini Integration:** Uses Google's Gemini model for natural language understanding and generation.
-- **Context Awerenes:** Chatbot will be context aware or not depending on your preferences.
--   **Streamlit UI:** Provides a user-friendly interface for interacting with the chatbot.
+-   **Context Awareness:** Chatbot will be context aware or not depending on your preferences.
+-   **Multiple Interfaces:** 
+    -   Streamlit UI for user-friendly interactions
+    -   FastAPI backend for programmatic access
 -   **Dynamic PDF Retrieval:** Scrapes Google Search results to find relevant financial report PDFs based on company tickers and financial quarters.
 
 ## Vector Database Enhancements
@@ -58,6 +60,8 @@ The latest updates significantly improve how the project handles the vector data
 
 ## Setup and Usage
 
+### Option 1: Streamlit Interface
+
 1.  **Install Dependencies:**
 
     ```bash
@@ -86,12 +90,82 @@ The latest updates significantly improve how the project handles the vector data
 5.  **Interact:**
     Upload a new pdf or, start asking questions.
 
+### Option 2: API Interface
+
+1. Follow the same setup steps for dependencies and environment variables as above.
+
+2. **Run the API:**
+    ```bash
+    python api.py
+    ```
+    Or using uvicorn directly:
+    ```bash
+    uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+    ```
+
+3. **Access API Documentation:**
+    - Swagger UI: http://localhost:8000/docs
+    - ReDoc: http://localhost:8000/redoc
+
+#### API Endpoints
+
+1. **POST /ask** - Ask a question to the chatbot
+    ```json
+    {
+        "text": "What was TCS's revenue in Q1?",
+        "context_aware": true
+    }
+    ```
+
+2. **POST /upload-pdf** - Upload a PDF file to add to the context
+    - Form data: `file`: PDF file
+
+3. **POST /add-ticker-context** - Add context from ticker symbols
+    ```json
+    {
+        "tickers": ["RELIANCE", "TCS"]
+    }
+    ```
+
+4. **GET /health** - Check API health status
+
+#### Example API Usage
+
+Using Python requests:
+
+```python
+import requests
+
+# Ask a question
+response = requests.post(
+    "http://localhost:8000/ask",
+    json={"text": "What was TCS revenue?", "context_aware": True}
+)
+print(response.json())
+
+# Upload a PDF
+with open('file.pdf', 'rb') as f:
+    response = requests.post(
+        "http://localhost:8000/upload-pdf",
+        files={"file": f}
+    )
+print(response.json())
+
+# Add ticker context
+response = requests.post(
+    "http://localhost:8000/add-ticker-context",
+    json={"tickers": ["RELIANCE", "TCS"]}
+)
+print(response.json())
+```
+
 ## Future Improvements
 
 -   **Database Pruning:** Implement a mechanism to remove old or irrelevant databases.
-- **More sources:** Add more sources for DB population, like CSV, TXT, etc.
+-   **More sources:** Add more sources for DB population, like CSV, TXT, etc.
 -   **UI/UX:** Improve overall user experience.
-- **Error Handling**: improve overall error handling.
+-   **Error Handling**: Improve overall error handling.
+-   **API Enhancement:** Add more endpoints and features to the API.
 
 ## Contributing
 

@@ -11,7 +11,7 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.documents import Document
 
 from loader.pdf_source import PDFSource
-from utils import vector_db_base_path, embedding_model_name, tickers
+from utils import utils
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class FinancialDataLoader:
     A class to manage loading, splitting, and storing financial data from PDFs into a vector database.
     """
 
-    def __init__(self, embedding_model_name: str = embedding_model_name, vector_db_base_path: str = vector_db_base_path):
+    def __init__(self, embedding_model_name: str = utils.embedding_model_name, vector_db_base_path: str = utils.vector_db_base_path):
         """
         Initializes the FinancialDataLoader with the specified embedding model and vector database base path.
 
@@ -94,7 +94,7 @@ class FinancialDataLoader:
         splits = text_splitter.split_documents(documents)
         return splits
 
-    def load_vector_db(self, date=None,tickers: List[str] = tickers) -> None:
+    def load_vector_db(self, date=None,tickers: List[str] = utils.tickers) -> None:
         """
         Loads the vector database by downloading and processing PDFs from URLs.
         

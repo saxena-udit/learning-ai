@@ -1,23 +1,19 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
-from langchain_google_genai import ChatGoogleGenerativeAI
 from loader.financial_data_loader import FinancialDataLoader
-from utils import model_name
+from model.llm_models import LLMModelProvider
+from utils import utils
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-class LangchainGeminiChatbot:
-    def __init__(self, model_name=model_name):
-        self.llm = ChatGoogleGenerativeAI(
-            model=model_name,
-            temperature=0,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
-            # other params...
-        )
+class FinancialChatbot:
+    def __init__(self, model_name=None):
+        if model_name is None:
+            model_name = utils.model_name
+        llm_provider = LLMModelProvider(model_name)
+        self.llm = llm_provider.get_model()
         self.json_output_parser = JsonOutputParser()
         self.output_parser = StrOutputParser()
         self.financial_data_loader = FinancialDataLoader()
@@ -60,5 +56,4 @@ class LangchainGeminiChatbot:
                 "context": lambda x: self.financial_data_loader.search_vector_db(x["question"])
             } | prompt | self.llm | self.parser()
 
-        return retrieval_chain
-
+        return retrieval_chain 

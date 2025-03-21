@@ -1,4 +1,4 @@
-from utils import get_financial_quarter
+from utils import utils
 from googlesearch import search
 import logging
 from typing import List, Optional
@@ -27,7 +27,7 @@ class PDFSource:
         Returns:
             List[str]: A list of URLs to financial PDFs found in the search results.
         """
-        financial_quarter = get_financial_quarter(date)
+        financial_quarter = utils.get_financial_quarter(date)
         results = []
         for ticker in tickers:
             query = f"{ticker} {financial_quarter} filetype:pdf"
