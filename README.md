@@ -1,119 +1,130 @@
 # Langchain-Gemini Financial Chatbot
 
-This project implements a chatbot that leverages Langchain, Google's Gemini model, and a vector database to answer questions based on financial documents (PDFs). The project includes both a Streamlit web interface and a FastAPI backend for programmatic access.
+This project implements a chatbot that leverages Langchain, Google's Gemini model, and a vector database to answer questions based on financial documents (PDFs). The project includes both a React frontend and a FastAPI backend for a complete solution.
 
 ## Key Features
 
--   **Context-Aware Chat:** The chatbot can use a vector database built from financial reports to provide contextually relevant answers.
+-   **Context-Aware Chat:** The chatbot uses vector databases built from financial reports to provide contextually relevant answers.
 -   **PDF Handling:**
     -   Ingests PDF documents, splits them into chunks, and stores them in a vector database.
     -   Retrieves relevant chunks from the database based on user queries.
-    -   Supports loading PDF's from URL's and local.
--   **Multiple Vector Databases:**  The system now efficiently manages multiple vector databases, each potentially representing a different data source (e.g., different financial periods or companies).
--   **Gemini Integration:** Uses Google's Gemini model for natural language understanding and generation.
--   **Context Awareness:** Chatbot will be context aware or not depending on your preferences.
+    -   Supports loading PDFs from URLs and local uploads.
+-   **Multiple Vector Databases:** The system efficiently manages multiple vector databases, each potentially representing a different data source.
+-   **Gemini Integration:** Uses Google's Gemini AI models for natural language understanding and generation.
+-   **Context Toggle:** Choose whether the chatbot should use vector database context or not.
 -   **Multiple Interfaces:** 
-    -   Streamlit UI for user-friendly interactions
-    -   FastAPI backend for programmatic access
--   **Dynamic PDF Retrieval:** Scrapes Google Search results to find relevant financial report PDFs based on company tickers and financial quarters.
+    -   React frontend with real-time chat interface
+    -   FastAPI backend API
+    -   Streamlit application (alternative interface)
+-   **Stock Ticker Selection:** Easily switch between different company data
+-   **Dynamic PDF Retrieval:** Scrapes Google Search results to find relevant financial report PDFs based on company tickers.
+-   **Comprehensive Logging:** Detailed logging system for tracking operations and troubleshooting.
 
-## Vector Database Enhancements
+## Project Structure
 
-The latest updates significantly improve how the project handles the vector database.
+```
+├── backend/
+│   ├── app/
+│   │   ├── api.py             # FastAPI implementation
+│   │   ├── streamlit_app.py   # Streamlit interface
+│   │   ├── app.py             # Core application logic
+│   │   ├── chatbot/           # Chatbot implementation
+│   │   ├── loader/            # PDF loading and vector DB management
+│   │   ├── model/             # LLM model providers
+│   │   ├── templates/         # Prompt templates
+│   │   └── utils/             # Utility functions
+│   ├── chroma_db/             # Vector database storage
+│   ├── logs/                  # Application logs
+│   ├── tests/                 # Test suite
+│   ├── venv/                  # Python virtual environment
+│   ├── requirements.txt       # Python dependencies
+│   └── .env                   # Environment variables
+├── frontend/
+│   └── src/                   # React frontend source code
+```
 
-### Multiple Vector Database Support
+## How It Works
 
--   **Directory-Based Organization:** Instead of a single, monolithic database, the system now stores data in multiple directories within the `vector_db_base_path`. Each subdirectory represents a distinct set of documents (e.g., different financial quarter reports).
--   **Dynamic Loading:** The system now dynamically loads all vector databases found in the `vector_db_base_path` subdirectories. This allows for easy addition of new data without manual reconfiguration.
--   **Unified Search:** When a user asks a question, the `search_vector_db` function efficiently searches across *all* loaded vector databases to find the most relevant documents.
-- **Auto creating**: Now, the system will auto generate vector database if none is found.
-- **Auto adding:** Now, the system will add documents to existing database when new document is uploaded.
+1.  **PDF Processing:**
+    -   PDFs are uploaded through the UI or fetched from URLs via Google Search.
+    -   Documents are split into smaller chunks of text.
+    -   Embeddings are generated for each chunk using Google's embedding model.
+    -   The chunks and embeddings are stored in a vector database.
 
-### How it Works
+2.  **Question Answering:**
+    -   User questions are processed by the chatbot.
+    -   If context-aware mode is enabled, relevant document chunks are retrieved from the vector database.
+    -   The prompt template includes context from the retrieved documents when available.
+    -   Google's Gemini model generates a response based on the prompt and context.
 
-1.  **PDF Loading:**
-    -   When a new PDF is uploaded (via the Streamlit UI) or downloaded from the web (using `load_pdf_from_url`):
-        -   The PDF is split into smaller chunks of text.
-        -   Embeddings are generated for each chunk using the `GoogleGenerativeAIEmbeddings` model.
-        -   The chunks and their embeddings are stored in a new vector database inside a subdirectory. If the vector db exists, the chunks are added to the existing DB.
-2.  **Database Loading:**
-    -   The `load_vector_db` function will auto populate the DB with the PDFs found via Google Search, if no DB is found.
-    - The `vector_db_retriever` function now automatically discovers and loads all the vector databases from the subdirectories.
-3.  **Question Answering:**
-    -   The `search_vector_db` function takes the user's question and performs a similarity search across all loaded databases.
-    -   The results from all databases are combined, providing a broader and more relevant context for the language model.
-    - The `retrieval_chain` function, will take care of adding the context to the prompt template.
-
-### Code Highlights
-
--   **`loader/financial_data_loader.py`**
-    -   `load_and_split_pdf`: Persists PDF data into a directory specific database.
-    -   `load_pdf_from_url`: Handles downloading and processing PDFs from URLs.
-    -   `load_vector_db`: Iterates through found URLs, downloads the files and call the persist_to_db
-    -   `persist_to_db`: Will persist all the pdf chunks into a DB.
-    -   `vector_db_retriever`: Loads all the vector databases, by iterating into the sub directories.
-    -   `search_vector_db`: Searches across multiple vector databases for relevant documents.
--   **`chatbot/langchain_gemini.py`**
-    -   `retrieval_chain`:  will add context, if there is any.
-- **`app.py`**:
-    - `Context aware` checkbox will allow user to decide if use vector DB as a context or not.
+3.  **Ticker Symbol Support:**
+    -   Users can select specific company tickers.
+    -   The system automatically finds and processes relevant financial reports.
+    -   Responses are tailored to the selected company's data.
 
 ## Setup and Usage
 
-### Option 1: Streamlit Interface
+### Backend Setup
 
-1.  **Install Dependencies:**
+1. Create a virtual environment:
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
 
-    ```bash
-    pip install -r requirements.txt
-    ```
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-2.  **Environment Variables:**
-    Create a `.env_my` file at the root of the project with these variables:
+3. Create a `.env` file in the backend directory with these variables:
+```
+EMBEDDING_MODEL_NAME=models/embedding-001
+MODEL_NAME=gemini-1.5-pro
+GOOGLE_API_KEY=your_google_api_key
+```
 
-    ```
-    GOOGLE_API_KEY=your_google_api_key
-    LANGCHAIN_API_KEY=your_langchain_api_key
-    ```
-    Remember to use this file when starting the app.
+4. Run the API Server:
+```bash
+cd app
+python api.py
+```
 
-3. **Populate DB:**
-    You can run the `app_loader.py` to populate the DB from the PDFs found in google.
-    ```
-    python app_loader.py
-    ```
-4.  **Run the Streamlit App:**
+The API will be available at `http://localhost:8000`
 
-    ```bash
-    streamlit run app.py
-    ```
-5.  **Interact:**
-    Upload a new pdf or, start asking questions.
+5. Alternatively, run the Streamlit app:
+```bash
+cd app
+streamlit run streamlit_app.py
+```
 
-### Option 2: API Interface
+### Frontend Setup
 
-1. Follow the same setup steps for dependencies and environment variables as above.
+1. Prerequisites:
+   - Node.js and npm
 
-2. **Run the API:**
-    ```bash
-    python api.py
-    ```
-    Or using uvicorn directly:
-    ```bash
-    uvicorn api:app --host 0.0.0.0 --port 8000 --reload
-    ```
+2. Install dependencies:
+```bash
+cd frontend
+npm install
+```
 
-3. **Access API Documentation:**
-    - Swagger UI: http://localhost:8000/docs
-    - ReDoc: http://localhost:8000/redoc
+3. Start the development server:
+```bash
+npm run dev
+```
 
-#### API Endpoints
+The frontend application will be available at `http://localhost:3000`
+
+### API Endpoints
 
 1. **POST /ask** - Ask a question to the chatbot
     ```json
     {
         "text": "What was TCS's revenue in Q1?",
-        "context_aware": true
+        "context_aware": true,
+        "ticker": "TCS"
     }
     ```
 
@@ -129,43 +140,28 @@ The latest updates significantly improve how the project handles the vector data
 
 4. **GET /health** - Check API health status
 
-#### Example API Usage
+## Technologies Used
 
-Using Python requests:
+- **Backend**:
+  - FastAPI
+  - Langchain
+  - Google Gemini AI models
+  - ChromaDB for vector database storage
+  - Python
 
-```python
-import requests
-
-# Ask a question
-response = requests.post(
-    "http://localhost:8000/ask",
-    json={"text": "What was TCS revenue?", "context_aware": True}
-)
-print(response.json())
-
-# Upload a PDF
-with open('file.pdf', 'rb') as f:
-    response = requests.post(
-        "http://localhost:8000/upload-pdf",
-        files={"file": f}
-    )
-print(response.json())
-
-# Add ticker context
-response = requests.post(
-    "http://localhost:8000/add-ticker-context",
-    json={"tickers": ["RELIANCE", "TCS"]}
-)
-print(response.json())
-```
+- **Frontend**:
+  - React
+  - TypeScript
+  - CSS
 
 ## Future Improvements
 
--   **Database Pruning:** Implement a mechanism to remove old or irrelevant databases.
--   **More sources:** Add more sources for DB population, like CSV, TXT, etc.
--   **UI/UX:** Improve overall user experience.
--   **Error Handling**: Improve overall error handling.
--   **API Enhancement:** Add more endpoints and features to the API.
+-   **Database Management:** Implement mechanisms to remove old or irrelevant databases.
+-   **Additional Data Sources:** Support more sources like CSV, TXT, etc.
+-   **Authentication:** Add user authentication and authorization.
+-   **Improved Error Handling:** Enhance error handling and recovery mechanisms.
+-   **Performance Optimization:** Improve vector search and response generation speed.
+-   **Enhanced UI:** Add visualization tools for financial data.
 
 ## Contributing
 
@@ -173,4 +169,4 @@ Contributions are welcome! Please feel free to submit pull requests or open issu
 
 ## License
 
-This project is licensed under the [Your License] license.
+This project is licensed under the MIT license.
