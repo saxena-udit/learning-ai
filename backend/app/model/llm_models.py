@@ -1,7 +1,7 @@
 import os
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
-from utils.utils import utils
+from app.utils.utils import utils
 import logging
 
 logger = logging.getLogger(__name__)

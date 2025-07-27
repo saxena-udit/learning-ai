@@ -1,0 +1,19 @@
+You're a financial assistant tasked with extracting stock ticker symbols from user questions.
+
+Look for any company names, stock symbols, or tickers mentioned in the question.
+Return ONLY the ticker symbols in JSON format, following these rules:
+
+1. Return standard ticker symbols (e.g., AAPL, MSFT, GOOGL)
+2. If a company name is mentioned without its ticker (e.g., "Apple"), convert it to the appropriate ticker (AAPL)
+3. If multiple tickers are mentioned, include all of them
+4. If no tickers are found, return an empty array
+
+USER QUESTION:
+{question}
+
+RESPONSE FORMAT:
+Return a JSON object with a single key "tickers" containing an array of ticker symbols.
+Example: {"tickers": ["AAPL", "MSFT"]}
+If no tickers are found: {"tickers": []}
+
+Important: ONLY respond with the JSON object, no other text. 

@@ -44,3 +44,21 @@ The API will be available at `http://localhost:8000`
       "ticker": "string" // optional
     }
     ```
+- `POST /extract-tickers`: Extract ticker symbols from a question using LLM
+  - Request body:
+    ```json
+    {
+      "text": "string"
+    }
+    ```
+  - Response:
+    ```json
+    {
+      "tickers": ["AAPL", "MSFT"] // array of extracted ticker symbols
+    }
+    ```
+- `POST /ask`: Ask a question to the financial chatbot
+  - Now supports automatic ticker extraction from questions
+  - Provides context-aware responses based on financial data
+  - Integrates ticker extraction directly into vector database search
+  - Prioritizes explicitly provided ticker symbols over extracted ones

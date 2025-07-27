@@ -1,9 +1,9 @@
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser, StrOutputParser
-from loader.financial_data_loader import financial_data_loader
-from model.llm_models import llm_model_provider
-from utils.utils import utils
-from utils.logger import get_logger
+from app.loader.financial_data_loader import financial_data_loader
+from app.model.llm_models import llm_model_provider
+from app.utils.utils import utils
+from app.utils.logger import get_logger
 
 # Get logger for this module
 logger = get_logger("chatbot")

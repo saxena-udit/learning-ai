@@ -1,6 +1,6 @@
 import streamlit as st
-from utils import utils
-from utils.logger import setup_logger
+from app.utils.utils import utils
+from app.utils.logger import get_logger
 import uvicorn
 import multiprocessing
 import os
@@ -8,7 +8,7 @@ import sys
 import argparse
 
 # Setup logger for this module
-logger = setup_logger("main")
+logger = get_logger("main")
 
 def parse_arguments():
     """Parse command line arguments for port configuration"""
@@ -26,7 +26,7 @@ def run_streamlit(port=8500):
     """Run the Streamlit server"""
     logger.info(f"Starting Streamlit server on port {port}")
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    streamlit_path = os.path.join(current_dir, "streamlit_app.py")
+    streamlit_path = os.path.join(current_dir, "app", "streamlit_app.py")
     os.system(f"{sys.executable} -m streamlit run {streamlit_path} --server.port {port}")
 
 if __name__ == "__main__":

@@ -8,13 +8,13 @@ import uvicorn
 import time
 from pathlib import Path
 
-from chatbot.financial_chatbot import financial_chatbot
-from loader.financial_data_loader import financial_data_loader
-from utils.utils import utils
-from utils.logger import setup_logger
+from app.chatbot.financial_chatbot import financial_chatbot
+from app.loader.financial_data_loader import financial_data_loader
+from app.utils.utils import utils
+from app.utils.logger import get_logger
 
 # Configure logger for this module
-logger = setup_logger("api")
+logger = get_logger("api")
 
 # Remove existing basic logging configuration
 # Create logs directory if it doesn't exist
@@ -79,10 +79,12 @@ async def ask_question(question: Question):
     logger.info(f"Processing question: '{question.text[:50]}...' | Context aware: {question.context_aware} | Ticker: {question.ticker}")
     
     try:
+        # Handle explicit ticker if provided (this takes precedence)
         if question.ticker:
-            logger.debug(f"Loading vector DB for ticker: {question.ticker}")
+            logger.debug(f"Loading vector DB for provided ticker: {question.ticker}")
             financial_data_loader.load_vector_db(tickers=[question.ticker])
         
+        # The retrieval chain will now automatically extract tickers if none are provided
         retrieval_chain = chatbot.retrieval_chain(question.context_aware)
         logger.debug("Invoking retrieval chain")
         result = retrieval_chain.invoke({"question": question.text})
@@ -92,6 +94,24 @@ async def ask_question(question: Question):
     except Exception as e:
         logger.error(f"Error processing question: {str(e)}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error processing question: {str(e)}")
+
+@app.post("/extract-tickers")
+async def extract_tickers(question: Question):
+    """
+    Extract ticker symbols from the question text using LLM
+    """
+    logger.info(f"Extracting tickers from question: '{question.text[:50]}...'")
+    
+    try:
+        extraction_chain = chatbot.ticker_extraction_chain()
+        logger.debug("Invoking ticker extraction chain")
+        result = extraction_chain.invoke({"question": question.text})
+        logger.info(f"Successfully extracted tickers: {result}")
+        
+        return result
+    except Exception as e:
+        logger.error(f"Error extracting tickers: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error extracting tickers: {str(e)}")
 
 @app.post("/upload-pdf")
 async def upload_pdf(file: UploadFile = File(...)):

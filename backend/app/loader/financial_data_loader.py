@@ -8,9 +8,9 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_core.documents import Document
 
-from loader.pdf_source import PDFSource
-from utils.utils import utils
-from utils.logger import get_logger
+from app.loader.pdf_source import PDFSource
+from app.utils.utils import utils
+from app.utils.logger import get_logger
 
 # Get logger for this module
 logger = get_logger("data_loader")
