@@ -5,6 +5,7 @@ from app.loader.financial_data_loader import financial_data_loader
 from app.utils.utils import utils
 from app.utils.logger import get_logger
 from app.nse.nse_indexes import NSEIndexes
+from app.nse.nse_formatter import NSEFormatter
 import time
 
 # Get logger for this module
@@ -43,6 +44,7 @@ class StreamlitApp:
             self.chatbot = financial_chatbot
             self.financial_data_loader = financial_data_loader
             self.nse_indexes = NSEIndexes()
+            self.nse_formatter = NSEFormatter()
             logger.info("Components initialized successfully")
         except Exception as e:
             logger.error(f"Error initializing StreamlitApp components: {str(e)}", exc_info=True)
@@ -105,226 +107,161 @@ class StreamlitApp:
         st.session_state.file_uploader_key += 1
 
     def display_sidebar(self):
-        """Displays the sidebar with context-aware checkbox and file uploader."""
+        """Displays the sidebar controls with context-aware checkbox and file uploader."""
         logger.debug("Setting up sidebar components")
-        with st.sidebar:  
-            st.checkbox(
-                "Context Aware",
-                value=st.session_state[self.context_aware_key],
-                key="check",
-                on_change=self.flip_context_aware
-            )
-            uploaded_file = st.file_uploader("Add more context", type="pdf", key=f"uploader_{st.session_state.file_uploader_key}")
-            if uploaded_file:
-                logger.info(f"Processing uploaded PDF: {uploaded_file.name}")
-                try:
-                    splits = self.financial_data_loader.load_and_split_pdf(uploaded_file)
-                    logger.info(f"Successfully processed PDF with {len(splits)} chunks")
-                    st.success(f"Processed PDF with {len(splits)} chunks")
-                    # Reset file uploader after successful processing
-                    self.reset_file_uploader()
-                except Exception as e:
-                    logger.error(f"Error processing PDF: {str(e)}", exc_info=True)
-                    st.error(f"Error processing PDF: {str(e)}")
-            
-            st.text_input("Add ticker context", key=self.ticker_key, on_change=self.process_ticker)
+        
+        st.checkbox(
+            "Context Aware",
+            value=st.session_state[self.context_aware_key],
+            key="check",
+            on_change=self.flip_context_aware
+        )
+        uploaded_file = st.file_uploader("Add more context", type="pdf", key=f"uploader_{st.session_state.file_uploader_key}")
+        if uploaded_file:
+            logger.info(f"Processing uploaded PDF: {uploaded_file.name}")
+            try:
+                splits = self.financial_data_loader.load_and_split_pdf(uploaded_file)
+                logger.info(f"Successfully processed PDF with {len(splits)} chunks")
+                st.success(f"Processed PDF with {len(splits)} chunks")
+                # Reset file uploader after successful processing
+                self.reset_file_uploader()
+            except Exception as e:
+                logger.error(f"Error processing PDF: {str(e)}", exc_info=True)
+                st.error(f"Error processing PDF: {str(e)}")
+        
+        st.text_input("Add ticker context", key=self.ticker_key, on_change=self.process_ticker)
     
     def display_main_content(self):
-        """Displays the main content area with question input and results."""
+        """Displays the main content area with question input and results, including sidebar functionality."""
         logger.debug(f"Setting up main content with context_aware: {st.session_state[self.context_aware_key]}")
         
-        # Use the callback to process and clear input
-        st.text_input("Question:", key=self.question_key, on_change=self.process_question)
+        # Create two columns: sidebar (1/4) and main content (3/4)
+        sidebar_col, main_col = st.columns([1, 3])
         
-        # Display the last result if it exists
-        if hasattr(st.session_state, 'last_result'):
-            st.write(f"Question: {st.session_state.input_text}")
-            if st.session_state.result_type == "table":
-                st.table(st.session_state.last_result)
-            elif st.session_state.result_type == "error":
-                st.error(st.session_state.last_result)
-            else:
-                st.write(st.session_state.last_result)
+        with sidebar_col:
+            self.display_sidebar()
+            
+        with main_col:
+            # Use the callback to process and clear input
+            st.text_input("Question:", key=self.question_key, on_change=self.process_question)
+            
+            # Display the last result if it exists
+            if hasattr(st.session_state, 'last_result'):
+                st.write(f"Question: {st.session_state.input_text}")
+                if st.session_state.result_type == "table":
+                    st.table(st.session_state.last_result)
+                elif st.session_state.result_type == "error":
+                    st.error(st.session_state.last_result)
+                else:
+                    st.write(st.session_state.last_result)
 
     def display_nse_indexes(self):
-        """Display NSE indexes in the right column with categorization."""
+        """Display NSE indexes in the first tab with categorization."""
         st.subheader("📈 NSE Indexes")
 
-        # Get categorized data
-        categorized_data = self.nse_indexes.get_categorized_data()
-        index_types = self.nse_indexes.get_index_types()
-
-        if categorized_data:
-            # Create tabs for different views
-            tab1, tab2, tab3 = st.tabs(["📊 All Indexes", "🏷️ By Category", "📈 Summary"])
+        # Get raw data
+        raw_data, last_update = self.nse_indexes.get_raw_data()
+        
+        if raw_data is not None and not raw_data.empty:
+            # Get categorized data using formatter
+            index_types = self.nse_indexes.get_index_types()
             
-            with tab1:
-                # Display all indexes in a single table
-                df_formatted, last_update = self.nse_indexes.get_data_for_display()
-                if df_formatted is not None:
-                    st.dataframe(
-                        df_formatted,
-                        use_container_width=True,
-                        hide_index=True,
-                        column_config={
-                            "Value": st.column_config.NumberColumn(
-                                "Value",
-                                help="Current index value",
-                                format="₹%.2f"
-                            ),
-                            "Change %": st.column_config.NumberColumn(
-                                "Change %",
-                                help="Percentage change from previous close",
-                                format="%.2f%%"
-                            ),
-                            "52W High": st.column_config.NumberColumn(
-                                "52W High",
-                                help="52-week high",
-                                format="₹%.2f"
-                            ),
-                            "52W Low": st.column_config.NumberColumn(
-                                "52W Low",
-                                help="52-week low",
-                                format="₹%.2f"
-                            ),
-                            "Down from High %": st.column_config.NumberColumn(
-                                "Down from High %", 
-                                help="Percentage down from 52-week high",
-                                format="%.2f%%"
-                            ),
-                            "Up from Low %": st.column_config.NumberColumn(
-                                "Up from Low %", 
-                                help="Percentage up from 52-week low",
-                                format="%.2f%%"
-                            )
-                        }
-                    )
+            # Display all indexes in a single table with filtering options
+            st.write("**All NSE Indexes**")
             
-            with tab2:
-                # Display categorized tables
-                if index_types:
-                    # Create a mapping of display names to actual values for the selectbox
-                    type_labels = self.nse_indexes.get_index_type_labels()
-                    type_display_names = [type_labels.get(t, t) for t in index_types]
-                    type_mapping = dict(zip(type_display_names, index_types))
-                    
-                    selected_type_display = st.selectbox(
-                        "Select Index Type:",
-                        type_display_names,
-                        key="index_type_selector"
-                    )
-                    
-                    if selected_type_display:
-                        selected_type = type_mapping[selected_type_display]
-                        
-                        if selected_type and selected_type in categorized_data:
-                            sub_types = list(categorized_data[selected_type].keys())
-                            
-                            if sub_types:
-                                # Create a mapping of display names to actual values for sub-types
-                                sub_type_labels = self.nse_indexes.get_index_sub_type_labels()
-                                sub_type_display_names = [sub_type_labels.get(st, st) for st in sub_types]
-                                sub_type_mapping = dict(zip(sub_type_display_names, sub_types))
-                                
-                                selected_sub_type_display = st.selectbox(
-                                    "Select Index Sub Type:",
-                                    sub_type_display_names,
-                                    key="index_sub_type_selector"
-                                )
-                                
-                                if selected_sub_type_display:
-                                    selected_sub_type = sub_type_mapping[selected_sub_type_display]
-                                    
-                                    if selected_sub_type and selected_sub_type in categorized_data[selected_type]:
-                                        df_subset = categorized_data[selected_type][selected_sub_type]
-                                        
-                                        # Get display name for the category
-                                        category_name = self.nse_indexes.get_display_name(selected_type, selected_sub_type)
-                                        st.write(f"**{category_name}** ({len(df_subset)} indices)")
-                                        
-                                        st.dataframe(
-                                            df_subset,
-                                            use_container_width=True,
-                                            hide_index=True,
-                                            column_config={
-                                                "Value": st.column_config.NumberColumn(
-                                                    "Value",
-                                                    help="Current index value",
-                                                    format="₹%.2f"
-                                                ),
-                                                "Change %": st.column_config.NumberColumn(
-                                                    "Change %",
-                                                    help="Percentage change from previous close",
-                                                    format="%.2f%%"
-                                                ),
-                                                "52W High": st.column_config.NumberColumn(
-                                                    "52W High",
-                                                    help="52-week high",
-                                                    format="₹%.2f"
-                                                ),
-                                                "52W Low": st.column_config.NumberColumn(
-                                                    "52W Low",
-                                                    help="52-week low",
-                                                    format="₹%.2f"
-                                                ),
-                                                "Down from High %": st.column_config.NumberColumn(
-                                                    "Down from High %", 
-                                                    help="Percentage down from 52-week high",
-                                                    format="%.2f%%"
-                                                ),
-                                                "Up from Low %": st.column_config.NumberColumn(
-                                                    "Up from Low %", 
-                                                    help="Percentage up from 52-week low",
-                                                    format="%.2f%%"
-                                                )
-                                            }
-                                        )
-                            else:
-                                st.info(f"No sub-types found for {selected_type_display}")
-                        else:
-                            st.info("No data available for selected type")
-                else:
-                    st.info("No index types available")
+            # Add filtering options
+            col1, col2 = st.columns([1, 1])
             
-            with tab3:
-                # Display summary statistics
-                st.write("**Index Categories Summary:**")
-                
-                summary_data = []
+            with col1:
+                # Filter by index type
                 type_labels = self.nse_indexes.get_index_type_labels()
+                type_display_names = [type_labels.get(t, t) for t in index_types]
+                type_mapping = dict(zip(type_display_names, index_types))
                 
-                for index_type in categorized_data:
-                    total_indices = 0
-                    sub_types_count = len(categorized_data[index_type])
+                selected_type_display = st.selectbox(
+                    "Filter by Index Type:",
+                    ["All Types"] + type_display_names,
+                    key="index_type_filter"
+                )
+            
+            with col2:
+                # Filter by sub type (if a type is selected)
+                sub_type_filter = None
+                if selected_type_display and selected_type_display != "All Types":
+                    selected_type = type_mapping[selected_type_display]
+                    sub_types = self.nse_indexes.get_index_sub_types(selected_type)
                     
-                    for sub_type in categorized_data[index_type]:
-                        total_indices += len(categorized_data[index_type][sub_type])
+                    if sub_types:
+                        sub_type_labels = self.nse_indexes.get_index_sub_type_labels()
+                        sub_type_display_names = [sub_type_labels.get(st, st) for st in sub_types]
+                        sub_type_mapping = dict(zip(sub_type_display_names, sub_types))
+                        
+                        selected_sub_type_display = st.selectbox(
+                            "Filter by Sub Type:",
+                            ["All Sub Types"] + sub_type_display_names,
+                            key="index_sub_type_filter"
+                        )
+                        
+                        if selected_sub_type_display and selected_sub_type_display != "All Sub Types":
+                            sub_type_filter = sub_type_mapping[selected_sub_type_display]
+            
+            # Format the data using formatter
+            df_formatted = self.nse_formatter.format_data_for_display(raw_data)
+            
+            if not df_formatted.empty:
+                # Apply filters if selected
+                if selected_type_display and selected_type_display != "All Types":
+                    selected_type = type_mapping[selected_type_display]
+                    # Filter by index type
+                    filtered_indices = raw_data[raw_data['indexType'] == selected_type]['index'].tolist()
+                    df_formatted = df_formatted[df_formatted['Index'].isin(filtered_indices)]
                     
-                    # Use descriptive label for index type
-                    display_type = type_labels.get(index_type, index_type)
+                    # Apply sub-type filter if selected
+                    if sub_type_filter:
+                        sub_type_indices = raw_data[
+                            (raw_data['indexType'] == selected_type) & 
+                            (raw_data['indexSubType'] == sub_type_filter)
+                        ]['index'].tolist()
+                        df_formatted = df_formatted[df_formatted['Index'].isin(sub_type_indices)]
+                
+                # Create column configuration for all columns
+                column_config = self.nse_formatter.create_column_config()
+                
+                # Display the data with all columns visible
+                st.dataframe(
+                    df_formatted,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config=column_config
+                )
+                
+                # Display summary information
+                st.write(f"**Showing {len(df_formatted)} indices**")
+                st.info("💡 Use the view icon (👁️) in the dataframe to show/hide columns as needed")
+                
+                # Get and display summary statistics
+                stats = self.nse_formatter.get_summary_statistics(df_formatted)
+                if stats:
+                    col1, col2, col3 = st.columns(3)
                     
-                    summary_data.append({
-                        "Index Type": display_type,
-                        "Sub Types": sub_types_count,
-                        "Total Indices": total_indices
-                    })
-                
-                if summary_data:
-                    summary_df = pd.DataFrame(summary_data)
-                    st.dataframe(
-                        summary_df,
-                        use_container_width=True,
-                        hide_index=True
-                    )
-                
-                
+                    with col1:
+                        if 'average_change' in stats:
+                            st.metric("Average Change %", f"{stats['average_change']:.2f}%")
+                    
+                    with col2:
+                        if 'positive_count' in stats:
+                            st.metric("Positive Changes", stats['positive_count'])
+                    
+                    with col3:
+                        if 'negative_count' in stats:
+                            st.metric("Negative Changes", stats['negative_count'])
+            
             # Refresh button and last update time
             if st.button("🔄 Refresh Indexes", key="refresh_indexes"):
                 self.nse_indexes.force_refresh()
                 st.rerun()
 
             # Get last update time
-            _, last_update = self.nse_indexes.get_data_for_display()
             if last_update:
                 last_update_time = time.strftime('%H:%M:%S', time.localtime(last_update))
                 st.caption(f"Last updated: {last_update_time}")
@@ -338,12 +275,14 @@ class StreamlitApp:
     def run(self):
         """Runs the Streamlit application."""
         logger.info("Running StreamlitApp")
-        self.display_sidebar()
-        # Create two columns: main (3/4) and right (1/4)
-        main_col, right_col = st.columns([3, 1])
-        with main_col:
+        
+        # Create two tabs: NSE Indexes and Chatbot
+        tab1, tab2 = st.tabs(["📈 NSE Indexes", "🤖 Financial Chatbot"])
+        
+        with tab1:
             self.display_nse_indexes()
-        with right_col:
+            
+        with tab2:
             self.display_main_content()
 
 if __name__ == "__main__":
